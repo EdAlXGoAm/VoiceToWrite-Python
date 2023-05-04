@@ -1,60 +1,54 @@
 import tkinter as tk
+from tkinter import font
 
 class AzureSTTGUI(tk.Tk):
-    def __init__(self, external_button_functions):
+    def __init__(self):
         super().__init__()
         self.title("Voice to Write")
+        self.protocol("WM_DELETE_WINDOW", self.close)
         # Set fixed window size
-        self.geometry("133x100")
+        self.geometry("900x400")
+
+        self.custom_font = font.Font(family="Calibri", size=12)
+
         # Keep the window in the foreground
         self.wm_attributes("-topmost", 1)
         # Disable window rescaling
         self.resizable(False, False)
-        self.configure(bg='#e37165')
+        self.configure(bg='#fbfafb')
 
-        # Set the overrideredirect property to True to remove the default title bar
-        self.overrideredirect(True)
-        # Create a custom frame to simulate a title bar
-        self.title_bar = tk.Frame(self, bg='#e98e9c', relief='raised', bd=1)
-        # Add a close button to the title bar
-        self.close_button = tk.Button(self.title_bar, text='x', command=self.quit, bg='#e98e9c', fg='white', padx=5)
-        # Align the close button to the right
-        self.close_button.pack(side='right')
-        # Add a label to display the window name in the title bar
-        self.title_label = tk.Label(self.title_bar, text="Voice to Write", bg='#e98e9c', fg='white', padx=5)
-        # Align the label to the left
-        self.title_label.pack(side='left')
-        # Place the title bar at the top of the window
-        self.title_bar.pack(expand=1, fill='x')
-        # Function to move the window by dragging the element with the mouse
-        def move_window(event):
-            self.geometry(f"+{event.x_root}+{event.y_root}")
-        # Bind the title bar motion to the move window function
-        self.title_bar.bind("<B1-Motion>", move_window)
-        # Bind the title label motion to the move window function
-        self.title_label.bind("<B1-Motion>", move_window)
+        # Create a frame for the first label and button
+        frame1 = tk.Frame(self, bg='#f4f5ff')
+        frame1.pack(side='left', padx=5, pady=5)
         
         # Create a label widget and place it on the window
-        self.lbl_run_STT = tk.Label(self, text="Press to start", bg="#1a76d2", fg="white")
-        self.lbl_run_STT.pack()
+        self.lbl_run_STT_es = tk.Label(frame1, text="Press to start")
+        self.lbl_run_STT_es.pack(side='top', padx=5, pady=5)
 
         # Create a button and place it on the window
-        self.btn_run_STT = tk.Button(self, text="Start", bg="#f2f8f5", fg="#058527", command=self.button_functions)
-        self.btn_run_STT.pack()
+        self.btn_run_STT_es = tk.Button(frame1, text="Start es-MX", bg="#673ee6", fg="white")
+        self.btn_run_STT_es.pack(side='top', padx=5, pady=5)
 
-        # Provide the external function to the button
-        self.external_button_functions = external_button_functions
+        # Create a text box widget and place it on the window
+        self.txt_run_STT_es = tk.Text(frame1, width=50, height=10, wrap="word", font=self.custom_font)
+        self.txt_run_STT_es.pack(side='bottom', padx=5, pady=5)
 
-    # Function to execute the external function and change the button text
-    def button_functions(self):
-        self.external_button_functions()
-        self.change_text()
+        # Create a frame for the second label and button
+        frame2 = tk.Frame(self, bg='#f4f5ff')
+        frame2.pack(side='right', padx=5, pady=5)
 
-    # Function to change the button text
-    def change_text(self):
-        if self.btn_run_STT.cget("text") == "Start":
-            self.lbl_run_STT.config(text="Press to stop")
-            self.btn_run_STT.config(text="Stop", bg="#f7c3c4", fg="#c02910")
-        else:
-            self.lbl_run_STT.config(text="Press to start")
-            self.btn_run_STT.config(text="Start", bg="#f2f8f5", fg="#058527")
+        # Create a label widget and place it on the window
+        self.lbl_run_STT_en = tk.Label(frame2, text="Press to start")
+        self.lbl_run_STT_en.pack(side='top', padx=5, pady=5)
+
+        # Create a button and place it on the window
+        self.btn_run_STT_en = tk.Button(frame2, text="Start en-US", bg="#673ee6", fg="white")
+        self.btn_run_STT_en.pack(side='top', padx=5, pady=5)
+
+        # Create a text box widget and place it on the window
+        self.txt_run_STT_en = tk.Text(frame2, width=50, height=10, wrap="word", font=self.custom_font)
+        self.txt_run_STT_en.pack(side='bottom', padx=5, pady=5)
+
+    def close(self):
+        # Event to close the window
+        self.quit()
