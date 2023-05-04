@@ -1,3 +1,5 @@
+from deep_translator import (GoogleTranslator)
+
 #--- Libraries for Azure voice to text real time ---#
 from p_libs import lib_Azure_STT_realtime as Az_vtt_rt
 #--- Modules for Tkinter GUI ---#
@@ -8,20 +10,40 @@ import queue
 import threading
 
 import tkinter as tk
+
 class TextWriterThread(threading.Thread):
-    def __init__(self, textbox, text_queue):
+    def __init__(self, textbox, text_queue, textbox_trnslated, language_to):
         threading.Thread.__init__(self)
         self.textbox = textbox
         self.text_queue = text_queue
+        self.textbox_trnslated = textbox_trnslated
+        self.language_to = language_to
         self._stop_event = threading.Event()
 
+        # Set the text color to red
+        self.textbox.tag_configure("red", foreground="red")
+        self.textbox.tag_configure("black", foreground="black")
+        # Set the text color to black
+        self.textbox_trnslated.tag_configure("red", foreground="red")
+        self.textbox_trnslated.tag_configure("black", foreground="black")
+
     def run(self):
+        color = "red"
         while not self._stop_event.is_set():
-            print("Thread running")
             if not self.text_queue.empty():
+                if color == "red":
+                    color = "black"
+                else:
+                    color = "red"
                 text = self.text_queue.get()
-                self.textbox.insert(tk.END, text + "\n")
+                self.textbox.insert(tk.END, text + "\n", color)
                 self.textbox.see(tk.END)
+                try:
+                    translated_text = GoogleTranslator(source='auto', target=self.language_to).translate(
+                        text)
+                    self.textbox_trnslated.insert(tk.END, translated_text + "\n", color)
+                except Exception:
+                    print("unsupported by GoogleTranslate")
 
     def stop(self):
         self._stop_event.set()
@@ -65,9 +87,9 @@ if __name__ == "__main__":
     # Create an instance of the AzureSTTGUI class
     AzureSTTGUI = tk_STT.AzureSTTGUI()
     
-    text_writer_es_conv = TextWriterThread(AzureSTTGUI.frame3.textbox, text_queue_es_conv)
+    text_writer_es_conv = TextWriterThread(AzureSTTGUI.frame3.textbox, text_queue_es_conv, AzureSTTGUI.frame5.textbox, "en")
     text_writer_es_conv.daemon = True
-    text_writer_en_conv = TextWriterThread(AzureSTTGUI.frame4.textbox, text_queue_en_conv)
+    text_writer_en_conv = TextWriterThread(AzureSTTGUI.frame4.textbox, text_queue_en_conv, AzureSTTGUI.frame6.textbox, "es")
     text_writer_en_conv.daemon = True
 
     # Function to execute the external function and change the button text

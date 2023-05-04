@@ -8,7 +8,7 @@ class AzureSTTGUI(tk.Tk):
         self.title("Voice to Write")
         self.protocol("WM_DELETE_WINDOW", self.close)
         # Set fixed window size
-        self.geometry("900x800")
+        self.geometry("1200x800")
 
         self.custom_font = font.Font(family="Calibri", size=12)
 
@@ -29,7 +29,18 @@ class AzureSTTGUI(tk.Tk):
                 self.button = tk.Button(self, text=button_text, bg="#673ee6", fg="white")
                 self.button.grid(row=1, column=0, padx=5, pady=5)
 
-                self.textbox = tk.Text(self, width=50, height=10, wrap="word", font=self.master.custom_font)
+                self.textbox = tk.Text(self, width=72, height=9, wrap="word", font=self.master.custom_font)
+                self.textbox.grid(row=2, column=0, padx=5, pady=5)
+                
+        class create_translation_frame(tk.Frame):
+            def __init__(self, parent, label_text):
+                super().__init__(parent, bg='#f4f5ff')
+                self.grid(padx=5, pady=5, sticky='nsew')
+
+                self.label = tk.Label(self, text=label_text)
+                self.label.grid(row=0, column=0, padx=5, pady=5)
+
+                self.textbox = tk.Text(self, width=72, height=11, wrap="word", font=self.master.custom_font)
                 self.textbox.grid(row=2, column=0, padx=5, pady=5)
 
         # Frame 1:
@@ -47,6 +58,14 @@ class AzureSTTGUI(tk.Tk):
         # Frame 4:
         self.frame4 = create_frame(self, "Press to start", "Start en-US")
         self.frame4.grid(row=1, column=1, padx=5, pady=5)
+
+        # Frame 5:
+        self.frame5 = create_translation_frame(self, "This is the text translated to English")
+        self.frame5.grid(row=2, column=0, padx=5, pady=5)
+
+        # Frame 6:
+        self.frame6 = create_translation_frame(self, "This is the text translated to Spanish")
+        self.frame6.grid(row=2, column=1, padx=5, pady=5)
 
     def close(self):
         # Event to close the window
