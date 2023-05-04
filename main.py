@@ -37,7 +37,7 @@ class TranslatorThread(threading.Thread):
             time.sleep(0.5)
             if not self.text_queue.empty():
                 text = self.text_queue.get()
-                if False:
+                if True:
                     try:
                         translated_text = GoogleTranslator(source='auto', target=self.language_to).translate(
                             text)
@@ -67,8 +67,8 @@ class TranslatorThread(threading.Thread):
                         color = "black"
 
     def stop(self):
-        self._stop_event.set()
         print("Thread stopped")
+        self._stop_event.set()
 
 class TextWriterThread(threading.Thread):
     def __init__(self, textbox, text_queue, partial=False, to_translate_queue=None):
@@ -101,28 +101,56 @@ class TextWriterThread(threading.Thread):
                         color = "black"
 
     def stop(self):
-        self._stop_event.set()
         print("Thread stopped")
+        self._stop_event.set()
 
-def start_stop_Recognizer(SpeechRecognizer, btn, dis_btn, thread=None, thread_partial=None, thread_translator=None, thread_translator_partial=None):
+def create_thread_TextWriterThread(textbox, text_queue, partial, to_translate_queue):
+    return TextWriterThread(textbox, text_queue, partial, to_translate_queue)
+
+def create_thread_TranslatorThread(textbox, text_queue, language_to, translate_nucleus, speech_nucleus, partial):
+    return TranslatorThread(textbox, text_queue, language_to, translate_nucleus, speech_nucleus, partial)
+
+def start_stop_Recognizer(SpeechRecognizer, btn, dis_btn,
+                          thread_ful_ori=None, thread_ful_ori_p=None,
+                          thread_ful_trn=None, thread_ful_trn_p=None,
+                          thread_int_ori=None, thread_int_ori_p=None,
+                          thread_int_trn=None, thread_int_trn_p=None):
     if btn.cget("text").split()[0] == "Start":
         SpeechRecognizer.start_continuous_recognition()
-        if thread is not None:
-            thread.start()
-            thread_partial.start()
-            thread_translator.start()
-            thread_translator_partial.start()
+        if thread_ful_ori is None:
+            thread_ful_ori = create_thread_TextWriterThread(thread_ful_ori_p[0], thread_ful_ori_p[1], thread_ful_ori_p[2], thread_ful_ori_p[3])
+            thread_ful_ori.daemon = True
+            thread_ful_ori.start()
+        if thread_ful_trn is None:
+            thread_ful_trn = create_thread_TranslatorThread(thread_ful_trn_p[0], thread_ful_trn_p[1], thread_ful_trn_p[2], thread_ful_trn_p[3], thread_ful_trn_p[4], thread_ful_trn_p[5])
+            thread_ful_trn.daemon = True
+            thread_ful_trn.start()
+        if thread_int_ori is None:
+            thread_int_ori = create_thread_TextWriterThread(thread_int_ori_p[0], thread_int_ori_p[1], thread_int_ori_p[2], thread_int_ori_p[3])
+            thread_int_ori.daemon = True
+            thread_int_ori.start()
+        if thread_int_trn is None:
+            thread_int_trn = create_thread_TranslatorThread(thread_int_trn_p[0], thread_int_trn_p[1], thread_int_trn_p[2], thread_int_trn_p[3], thread_int_trn_p[4], thread_int_trn_p[5])
+            thread_int_trn.daemon = True
+            thread_int_trn.start()
         for dis_btn in dis_btn:
             dis_btn.config(state="disabled")
             dis_btn.config(bg="#f7f6f9", fg="black")
         print("STT started")
     else:
         SpeechRecognizer.stop_continuous_recognition()
-        if thread is not None:
-            thread.stop()
-            thread_partial.stop()
-            thread_translator.stop()
-            thread_translator_partial.stop()
+        if thread_ful_ori is not None:
+            thread_ful_ori.stop()
+            thread_ful_ori = None
+        if thread_ful_trn is not None:
+            thread_ful_trn.stop()
+            thread_ful_trn = None
+        if thread_int_ori is not None:
+            thread_int_ori.stop()
+            thread_int_ori = None
+        if thread_int_trn is not None:
+            thread_int_trn.stop()
+            thread_int_trn = None
         for dis_btn in dis_btn:
             dis_btn.config(state="normal")
             dis_btn.config(bg="#673ee6", fg="white")
@@ -162,15 +190,15 @@ if __name__ == "__main__":
     speech_synthesizer = speechsdk.SpeechSynthesizer(speech_config=speech_config)
     
     # Create necessary queues
-    text_queue_es_conv = queue.Queue() # Queue to save the text output from the SpeechRecognizer ES
-    partial_text_queue_es_conv = queue.Queue() # Queue to save the partial text output from the SpeechRecognizer ES
-    to_translate_text_queue_es_conv = queue.Queue() # Queue to save the text to translate ES to EN
-    partial_to_translate_text_queue_es_conv = queue.Queue() # Queue to save the partial text to translate ES to EN
+    queue_ful_es_ori = queue.Queue() # Queue to save the text output from the SpeechRecognizer ES
+    queue_int_es_ori = queue.Queue() # Queue to save the partial text output from the SpeechRecognizer ES
+    queue_ful_es_trn = queue.Queue() # Queue to save the text to translate ES to EN
+    queue_int_es_trn = queue.Queue() # Queue to save the partial text to translate ES to EN
 
-    text_queue_en_conv = queue.Queue() # Queue to save the text output from the SpeechRecognizer EN
-    partial_text_queue_en_conv = queue.Queue() # Queue to save the partial text output from the SpeechRecognizer EN
-    to_translate_text_queue_en_conv = queue.Queue() # Queue to save the text to translate EN to ES
-    partial_to_translate_text_queue_en_conv = queue.Queue() # Queue to save the partial text to translate EN to ES
+    queue_ful_en_ori = queue.Queue() # Queue to save the text output from the SpeechRecognizer EN
+    queue_int_en_ori = queue.Queue() # Queue to save the partial text output from the SpeechRecognizer EN
+    queue_ful_en_trn = queue.Queue() # Queue to save the text to translate EN to ES
+    queue_int_en_trn = queue.Queue() # Queue to save the partial text to translate EN to ES
     
     # Create an instance of the SpeechRecognizer class
     # ---- SR in spanish (type_text=True) ----
@@ -178,38 +206,38 @@ if __name__ == "__main__":
     # ---- SR in english (type_text=True) ----
     SpeechRecognizer_en = Az_vtt_rt.SpeechRecognizer(key=STT_key, region=STT_region, language="en-US", type_text=True)
     # ---- SR in spanish (conversation - queue) ----
-    SpeechRecognizer_es_conv = Az_vtt_rt.SpeechRecognizer(key=STT_key, region=STT_region, language="es-MX", type_text=False, text_queue=text_queue_es_conv, partial_text=partial_text_queue_es_conv)
+    SpeechRecognizer_es_conv = Az_vtt_rt.SpeechRecognizer(key=STT_key, region=STT_region, language="es-MX", type_text=False, text_queue=queue_ful_es_ori, partial_text=queue_int_es_ori)
     # ---- SR in english (conversation - queue) ----
-    SpeechRecognizer_en_conv = Az_vtt_rt.SpeechRecognizer(key=STT_key, region=STT_region, language="en-US", type_text=False, text_queue=text_queue_en_conv, partial_text=partial_text_queue_en_conv)
+    SpeechRecognizer_en_conv = Az_vtt_rt.SpeechRecognizer(key=STT_key, region=STT_region, language="en-US", type_text=False, text_queue=queue_ful_en_ori, partial_text=queue_int_en_ori)
 
     # Creating window of the AzureSTTGUI class
     AzureSTTGUI = tk_STT.AzureSTTGUI()
     
     # THREAD: Takes queue text and writes it in the textbox ES
-    text_writer_es_conv = TextWriterThread(AzureSTTGUI.frame3.textbox, text_queue_es_conv, to_translate_queue=to_translate_text_queue_es_conv)
-    text_writer_es_conv.daemon = True
+    tbw_ful_es_ori_t = None
+    tbw_ful_es_ori_p = [AzureSTTGUI.frame3.textbox, queue_ful_es_ori, False, queue_ful_es_trn]
     # THREAD: Takes queue text, translates it and writes it in the textbox ES
-    text_translater_es_conv = TranslatorThread(AzureSTTGUI.frame5.textbox, to_translate_text_queue_es_conv, "en", DeepL_translator, speech_synthesizer)
-    text_translater_es_conv.daemon = True
+    tbw_ful_es_trn_t = None
+    tbw_ful_es_trn_p = [AzureSTTGUI.frame5.textbox, queue_ful_es_trn, "en", DeepL_translator, speech_synthesizer, False]
     # THREAD: Takes queue partial text and writes it in the textbox ES - EN
-    partial_text_writer_es_conv = TextWriterThread(AzureSTTGUI.frame7.textbox, partial_text_queue_es_conv, partial=True, to_translate_queue=partial_to_translate_text_queue_es_conv)
-    partial_text_writer_es_conv.daemon = True
+    tbw_int_es_ori_t = None
+    tbw_int_es_ori_p = [AzureSTTGUI.frame7.textbox, queue_int_es_ori, True, queue_int_es_trn]
     # THREAD: Takes queue partial text, translates it and writes it in the textbox ES - EN
-    partial_text_translater_es_conv = TranslatorThread(AzureSTTGUI.frame8.textbox, partial_to_translate_text_queue_es_conv, "en", DeepL_translator, partial=True)
-    partial_text_translater_es_conv.daemon = True
+    tbw_int_es_trn_t = None
+    tbw_int_es_trn_p = [AzureSTTGUI.frame8.textbox, queue_int_es_trn, "en", DeepL_translator, None, True]
 
     # THREAD: Takes queue text and writes it in the textbox EN
-    text_writer_en_conv = TextWriterThread(AzureSTTGUI.frame4.textbox, text_queue_en_conv, to_translate_queue=to_translate_text_queue_en_conv)
-    text_writer_en_conv.daemon = True
+    tbw_ful_en_ori_t = None
+    tbw_ful_en_ori_p = [AzureSTTGUI.frame4.textbox, queue_ful_en_ori, False, queue_ful_en_trn]
     # THREAD: Takes queue text, translates it and writes it in the textbox EN
-    text_translater_en_conv = TranslatorThread(AzureSTTGUI.frame6.textbox, to_translate_text_queue_en_conv, "es", DeepL_translator, speech_synthesizer)
-    text_translater_en_conv.daemon = True
+    tbw_ful_en_trn_t = None
+    tbw_ful_en_trn_p = [AzureSTTGUI.frame6.textbox, queue_ful_en_trn, "es", DeepL_translator, speech_synthesizer, False]
     # THREAD: Takes queue partial text and writes it in the textbox EN - ES
-    partial_text_writer_en_conv = TextWriterThread(AzureSTTGUI.frame7.textbox, partial_text_queue_en_conv, partial=True, to_translate_queue=partial_to_translate_text_queue_en_conv)
-    partial_text_writer_en_conv.daemon = True
+    tbw_int_en_ori_t = None
+    tbw_int_en_ori_p = [AzureSTTGUI.frame7.textbox, queue_int_en_ori, True, queue_int_en_trn]
     # THREAD: Takes queue partial text, translates it and writes it in the textbox EN - ES
-    partial_text_translater_en_conv = TranslatorThread(AzureSTTGUI.frame8.textbox, partial_to_translate_text_queue_en_conv, "es", DeepL_translator, partial=True)
-    partial_text_translater_en_conv.daemon = True
+    tbw_int_en_trn_t = None
+    tbw_int_en_trn_p = [AzureSTTGUI.frame8.textbox, queue_int_en_trn, "es", DeepL_translator, None, True]
 
     # Function to execute the external function and change the button text
     def button_functions_es():
@@ -221,11 +249,19 @@ if __name__ == "__main__":
         change_text_btn_lbl_start_stop("es-US", AzureSTTGUI.frame2.label, AzureSTTGUI.frame2.button)
 
     def button_functions_es_conv():
-        start_stop_Recognizer(SpeechRecognizer_es_conv, AzureSTTGUI.frame3.button, [AzureSTTGUI.frame1.button, AzureSTTGUI.frame2.button, AzureSTTGUI.frame4.button], text_writer_es_conv, partial_text_writer_es_conv, text_translater_es_conv, partial_text_translater_es_conv)
+        start_stop_Recognizer(SpeechRecognizer_es_conv, AzureSTTGUI.frame3.button, [AzureSTTGUI.frame1.button, AzureSTTGUI.frame2.button, AzureSTTGUI.frame4.button],
+                              tbw_ful_es_ori_t, tbw_ful_es_ori_p,
+                              tbw_ful_es_trn_t, tbw_ful_es_trn_p,
+                              tbw_int_es_ori_t, tbw_int_es_ori_p,
+                              tbw_int_es_trn_t, tbw_int_es_trn_p)
         change_text_btn_lbl_start_stop("es-MX", AzureSTTGUI.frame3.label, AzureSTTGUI.frame3.button)
 
     def button_functions_en_conv():
-        start_stop_Recognizer(SpeechRecognizer_en_conv, AzureSTTGUI.frame4.button, [AzureSTTGUI.frame1.button, AzureSTTGUI.frame2.button, AzureSTTGUI.frame3.button], text_writer_en_conv, partial_text_writer_en_conv, text_translater_en_conv, partial_text_translater_en_conv)
+        start_stop_Recognizer(SpeechRecognizer_en_conv, AzureSTTGUI.frame4.button, [AzureSTTGUI.frame1.button, AzureSTTGUI.frame2.button, AzureSTTGUI.frame3.button],
+                              tbw_ful_en_ori_t, tbw_ful_en_ori_p,
+                              tbw_ful_en_trn_t, tbw_ful_en_trn_p,
+                              tbw_int_en_ori_t, tbw_int_en_ori_p,
+                              tbw_int_en_trn_t, tbw_int_en_trn_p)
         change_text_btn_lbl_start_stop("es-US", AzureSTTGUI.frame4.label, AzureSTTGUI.frame4.button)
 
     # Asign command to button es-MX
