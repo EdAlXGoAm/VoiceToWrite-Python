@@ -5,6 +5,8 @@ import azure.cognitiveservices.speech as speechsdk
 
 #--- Libraries for Azure voice to text real time ---#
 from p_libs import lib_Azure_STT_realtime as Az_vtt_rt
+#--- Libraries for recording audio ---#
+from p_libs import lib_Mic_rec_wav as Rec_Wav
 #--- Modules for Tkinter GUI ---#
 from p_modules import mod_tkinter_STT as tk_STT
 
@@ -110,51 +112,55 @@ def create_thread_TextWriterThread(textbox, text_queue, partial, to_translate_qu
 def create_thread_TranslatorThread(textbox, text_queue, language_to, translate_nucleus, speech_nucleus, partial):
     return TranslatorThread(textbox, text_queue, language_to, translate_nucleus, speech_nucleus, partial)
 
-def start_stop_Recognizer(SpeechRecognizer, btn, dis_btn,
+def start_stop_Recognizer(SpeechRecognizer, btn, dis_btn, conv=False,
                           thread_ful_ori=None, thread_ful_ori_p=None,
                           thread_ful_trn=None, thread_ful_trn_p=None,
                           thread_int_ori=None, thread_int_ori_p=None,
                           thread_int_trn=None, thread_int_trn_p=None):
     if btn.cget("text").split()[0] == "Start":
         SpeechRecognizer.start_continuous_recognition()
-        if thread_ful_ori is None:
-            thread_ful_ori = create_thread_TextWriterThread(thread_ful_ori_p[0], thread_ful_ori_p[1], thread_ful_ori_p[2], thread_ful_ori_p[3])
-            thread_ful_ori.daemon = True
-            thread_ful_ori.start()
-        if thread_ful_trn is None:
-            thread_ful_trn = create_thread_TranslatorThread(thread_ful_trn_p[0], thread_ful_trn_p[1], thread_ful_trn_p[2], thread_ful_trn_p[3], thread_ful_trn_p[4], thread_ful_trn_p[5])
-            thread_ful_trn.daemon = True
-            thread_ful_trn.start()
-        if thread_int_ori is None:
-            thread_int_ori = create_thread_TextWriterThread(thread_int_ori_p[0], thread_int_ori_p[1], thread_int_ori_p[2], thread_int_ori_p[3])
-            thread_int_ori.daemon = True
-            thread_int_ori.start()
-        if thread_int_trn is None:
-            thread_int_trn = create_thread_TranslatorThread(thread_int_trn_p[0], thread_int_trn_p[1], thread_int_trn_p[2], thread_int_trn_p[3], thread_int_trn_p[4], thread_int_trn_p[5])
-            thread_int_trn.daemon = True
-            thread_int_trn.start()
+        if conv:
+            if thread_ful_ori is None:
+                thread_ful_ori = create_thread_TextWriterThread(thread_ful_ori_p[0], thread_ful_ori_p[1], thread_ful_ori_p[2], thread_ful_ori_p[3])
+                thread_ful_ori.daemon = True
+                thread_ful_ori.start()
+            if thread_ful_trn is None:
+                thread_ful_trn = create_thread_TranslatorThread(thread_ful_trn_p[0], thread_ful_trn_p[1], thread_ful_trn_p[2], thread_ful_trn_p[3], thread_ful_trn_p[4], thread_ful_trn_p[5])
+                thread_ful_trn.daemon = True
+                thread_ful_trn.start()
+            if thread_int_ori is None:
+                thread_int_ori = create_thread_TextWriterThread(thread_int_ori_p[0], thread_int_ori_p[1], thread_int_ori_p[2], thread_int_ori_p[3])
+                thread_int_ori.daemon = True
+                thread_int_ori.start()
+            if thread_int_trn is None:
+                thread_int_trn = create_thread_TranslatorThread(thread_int_trn_p[0], thread_int_trn_p[1], thread_int_trn_p[2], thread_int_trn_p[3], thread_int_trn_p[4], thread_int_trn_p[5])
+                thread_int_trn.daemon = True
+                thread_int_trn.start()
         for dis_btn in dis_btn:
             dis_btn.config(state="disabled")
             dis_btn.config(bg="#f7f6f9", fg="black")
         print("STT started")
+        return thread_ful_ori, thread_ful_trn, thread_int_ori, thread_int_trn
     else:
         SpeechRecognizer.stop_continuous_recognition()
-        if thread_ful_ori is not None:
-            thread_ful_ori.stop()
-            thread_ful_ori = None
-        if thread_ful_trn is not None:
-            thread_ful_trn.stop()
-            thread_ful_trn = None
-        if thread_int_ori is not None:
-            thread_int_ori.stop()
-            thread_int_ori = None
-        if thread_int_trn is not None:
-            thread_int_trn.stop()
-            thread_int_trn = None
+        if conv:
+            if thread_ful_ori is not None:
+                thread_ful_ori.stop()
+                thread_ful_ori = None
+            if thread_ful_trn is not None:
+                thread_ful_trn.stop()
+                thread_ful_trn = None
+            if thread_int_ori is not None:
+                thread_int_ori.stop()
+                thread_int_ori = None
+            if thread_int_trn is not None:
+                thread_int_trn.stop()
+                thread_int_trn = None
         for dis_btn in dis_btn:
             dis_btn.config(state="normal")
             dis_btn.config(bg="#673ee6", fg="white")
         print("STT stopped")
+        return thread_ful_ori, thread_ful_trn, thread_int_ori, thread_int_trn
         
 # Function to change the button text
 def change_text_btn_lbl_start_stop(language, lbl, btn):
@@ -239,6 +245,8 @@ if __name__ == "__main__":
     tbw_int_en_trn_t = None
     tbw_int_en_trn_p = [AzureSTTGUI.frame8.textbox, queue_int_en_trn, "es", DeepL_translator, None, True]
 
+    recorder_thread = None
+
     # Function to execute the external function and change the button text
     def button_functions_es():
         start_stop_Recognizer(SpeechRecognizer_es, AzureSTTGUI.frame1.button, [AzureSTTGUI.frame2.button, AzureSTTGUI.frame3.button, AzureSTTGUI.frame4.button])
@@ -249,20 +257,47 @@ if __name__ == "__main__":
         change_text_btn_lbl_start_stop("es-US", AzureSTTGUI.frame2.label, AzureSTTGUI.frame2.button)
 
     def button_functions_es_conv():
-        start_stop_Recognizer(SpeechRecognizer_es_conv, AzureSTTGUI.frame3.button, [AzureSTTGUI.frame1.button, AzureSTTGUI.frame2.button, AzureSTTGUI.frame4.button],
-                              tbw_ful_es_ori_t, tbw_ful_es_ori_p,
-                              tbw_ful_es_trn_t, tbw_ful_es_trn_p,
-                              tbw_int_es_ori_t, tbw_int_es_ori_p,
-                              tbw_int_es_trn_t, tbw_int_es_trn_p)
+        global tbw_ful_es_ori_t, tbw_ful_es_ori_p, tbw_ful_es_trn_t, tbw_ful_es_trn_p, tbw_int_es_ori_t, tbw_int_es_ori_p, tbw_int_es_trn_t, tbw_int_es_trn_p
+        tbw_ful_es_ori_t, tbw_ful_es_trn_t, tbw_int_es_ori_t, tbw_int_es_trn_t = start_stop_Recognizer(
+            SpeechRecognizer_es_conv,
+            AzureSTTGUI.frame3.button,
+            [AzureSTTGUI.frame1.button, AzureSTTGUI.frame2.button, AzureSTTGUI.frame4.button],
+            True,
+            tbw_ful_es_ori_t, tbw_ful_es_ori_p,
+            tbw_ful_es_trn_t, tbw_ful_es_trn_p,
+            tbw_int_es_ori_t, tbw_int_es_ori_p,
+            tbw_int_es_trn_t, tbw_int_es_trn_p)
         change_text_btn_lbl_start_stop("es-MX", AzureSTTGUI.frame3.label, AzureSTTGUI.frame3.button)
 
     def button_functions_en_conv():
-        start_stop_Recognizer(SpeechRecognizer_en_conv, AzureSTTGUI.frame4.button, [AzureSTTGUI.frame1.button, AzureSTTGUI.frame2.button, AzureSTTGUI.frame3.button],
-                              tbw_ful_en_ori_t, tbw_ful_en_ori_p,
-                              tbw_ful_en_trn_t, tbw_ful_en_trn_p,
-                              tbw_int_en_ori_t, tbw_int_en_ori_p,
-                              tbw_int_en_trn_t, tbw_int_en_trn_p)
+        global tbw_ful_en_ori_t, tbw_ful_en_ori_p, tbw_ful_en_trn_t, tbw_ful_en_trn_p, tbw_int_en_ori_t, tbw_int_en_ori_p, tbw_int_en_trn_t, tbw_int_en_trn_p
+        tbw_ful_en_ori_t, tbw_ful_en_trn_t, tbw_int_en_ori_t, tbw_int_en_trn_t = start_stop_Recognizer(
+            SpeechRecognizer_en_conv,
+            AzureSTTGUI.frame4.button,
+            [AzureSTTGUI.frame1.button, AzureSTTGUI.frame2.button, AzureSTTGUI.frame3.button],
+            True,
+            tbw_ful_en_ori_t, tbw_ful_en_ori_p,
+            tbw_ful_en_trn_t, tbw_ful_en_trn_p,
+            tbw_int_en_ori_t, tbw_int_en_ori_p,
+            tbw_int_en_trn_t, tbw_int_en_trn_p)
         change_text_btn_lbl_start_stop("es-US", AzureSTTGUI.frame4.label, AzureSTTGUI.frame4.button)
+
+    def start_stop_recording_wav(thread, btn):
+        if btn.cget('text') == 'Record WAV':
+            btn.config(text='Stop recording', bg="#fc5084", fg="white")
+            thread = Rec_Wav.AudioRecorder('audio.wav')
+            thread.daemon = True
+            thread.start()
+            return thread
+        else:
+            btn.config(text='Record WAV', bg="#673ee6", fg="white")
+            thread.stop()
+            print("Rec WAV stopped")
+            return None
+        
+    def record_wav():
+        global recorder_thread
+        recorder_thread = start_stop_recording_wav(recorder_thread, AzureSTTGUI.frame0.button_rec_wav)
 
     # Asign command to button es-MX
     AzureSTTGUI.frame1.button.config(command=button_functions_es)
@@ -272,6 +307,9 @@ if __name__ == "__main__":
     AzureSTTGUI.frame3.button.config(command=button_functions_es_conv)
     # Asign command to button en-US conversation
     AzureSTTGUI.frame4.button.config(command=button_functions_en_conv)
+
+    # Asign command to button record wav
+    AzureSTTGUI.frame0.button_rec_wav.config(command=record_wav)
 
     # Start the Tkinter GUI
     AzureSTTGUI.mainloop()
