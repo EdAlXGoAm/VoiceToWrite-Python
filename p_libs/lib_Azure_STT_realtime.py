@@ -1,14 +1,17 @@
 #--- Libraries for type text with pyautogui ---#
 from p_libs import lib_PyAutoGUI_type as PyAGUI_w
+#--- Libraries for save in queue ---#
+import queue
 
 import azure.cognitiveservices.speech as speechsdk
 
 class SpeechRecognizer:
-    def __init__(self, key, region, language, type_text):
+    def __init__(self, key, region, language, type_text, text_queue=None):
         self.key = key
         self.region = region
         self.language = language
         self.type_text = type_text
+        self.text_queue = text_queue if text_queue is not None else queue.Queue()
         self.speech_config = speechsdk.SpeechConfig(subscription=self.key, region=self.region, speech_recognition_language=self.language)
         self.audio_config = speechsdk.audio.AudioConfig(use_default_microphone=True)
         self.speech_recognizer = speechsdk.SpeechRecognizer(speech_config=self.speech_config, audio_config=self.audio_config)
@@ -30,3 +33,5 @@ class SpeechRecognizer:
         # Type the text captured by the microphone
         if self.type_text:
             PyAGUI_w.type_text(text)
+        else:
+            self.text_queue.put(text)
