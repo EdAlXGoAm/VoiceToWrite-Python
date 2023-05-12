@@ -7,6 +7,10 @@ import azure.cognitiveservices.speech as speechsdk
 from p_libs import lib_Azure_STT_realtime as Az_vtt_rt
 #--- Libraries for recording audio ---#
 from p_libs import lib_Mic_rec_wav as Rec_Wav
+# pip install git+https://github.com/openai/whisper.git
+import whisper #conda install -c conda-forge ffmpeg
+#--- Libraries for move mouse ---#
+from p_libs import lib_move_mouse as Mm
 #--- Modules for Tkinter GUI ---#
 from p_modules import mod_tkinter_STT as tk_STT
 
@@ -17,6 +21,9 @@ import time
 
 #--- Libraries for GUI ---#
 import tkinter as tk
+
+### SWITCHES ###
+S_Whisper = 0
 
 class TranslatorThread(threading.Thread):
     def __init__(self, textbox_trnslated, text_queue, language_to, translate_nucleus, speech_nucleus=None, partial=False):
@@ -194,6 +201,10 @@ if __name__ == "__main__":
     speech_config = speechsdk.SpeechConfig(subscription=TTS_key, region=TTS_region)
     speech_config.speech_synthesis_voice_name = "es-MX-DaliaNeural"
     speech_synthesizer = speechsdk.SpeechSynthesizer(speech_config=speech_config)
+
+    # Initializing whisper
+    if S_Whisper:
+        model = whisper.load_model("medium")
     
     # Create necessary queues
     queue_ful_es_ori = queue.Queue() # Queue to save the text output from the SpeechRecognizer ES
@@ -246,6 +257,7 @@ if __name__ == "__main__":
     tbw_int_en_trn_p = [AzureSTTGUI.frame8.textbox, queue_int_en_trn, "es", DeepL_translator, None, True]
 
     recorder_thread = None
+    move_mouse_t = None
 
     # Function to execute the external function and change the button text
     def button_functions_es():
@@ -288,16 +300,37 @@ if __name__ == "__main__":
             thread = Rec_Wav.AudioRecorder('audio.wav')
             thread.daemon = True
             thread.start()
-            return thread
+            return thread, None
         else:
             btn.config(text='Record WAV', bg="#673ee6", fg="white")
             thread.stop()
             print("Rec WAV stopped")
-            return None
+            return None, "D:/MyRepos/VoiceToWrite-Python/VoiceToWrite-Python/audio.wav"
         
     def record_wav():
-        global recorder_thread
-        recorder_thread = start_stop_recording_wav(recorder_thread, AzureSTTGUI.frame0.button_rec_wav)
+        global recorder_thread, model
+        recorder_thread, file_name_wav = start_stop_recording_wav(recorder_thread, AzureSTTGUI.frame0.button_rec_wav)
+        if file_name_wav is not None:
+            result = model.transcribe(file_name_wav)
+            print(result["text"])
+
+    def start_stop_move_mouse(thread, btn):
+        if btn.cget('text') == 'Move mouse':
+            btn.config(text='Moving mouse', bg="#fc5084", fg="white")
+            thread = Mm.MoveMouse()
+            thread.daemon = True
+            thread.start()
+            return thread
+        else:
+            btn.config(text='Move mouse', bg="#673ee6", fg="white")
+            thread.stop()
+            print("Move mouse stopped")
+            return None
+        
+    def move_mouse():
+        global move_mouse_t
+        move_mouse_t = start_stop_move_mouse(move_mouse_t, AzureSTTGUI.frame0.button_move_mouse)
+
 
     # Asign command to button es-MX
     AzureSTTGUI.frame1.button.config(command=button_functions_es)
@@ -309,7 +342,10 @@ if __name__ == "__main__":
     AzureSTTGUI.frame4.button.config(command=button_functions_en_conv)
 
     # Asign command to button record wav
-    AzureSTTGUI.frame0.button_rec_wav.config(command=record_wav)
+    if S_Whisper:
+        AzureSTTGUI.frame0.button_rec_wav.config(command=record_wav)
+
+    AzureSTTGUI.frame0.button_move_mouse.config(command=move_mouse)
 
     # Start the Tkinter GUI
     AzureSTTGUI.mainloop()

@@ -70,6 +70,9 @@ class AzureSTTGUI(tk.Tk):
                 self.button_rec_wav = tk.Button(self, text="Record WAV", bg="#673ee6", fg="white")
                 self.button_rec_wav.grid(row=2, column=0, padx=5, pady=5)
 
+                self.button_move_mouse = tk.Button(self, text="Move mouse", bg="#673ee6", fg="white")
+                self.button_move_mouse.grid(row=4, column=0, padx=5, pady=5)
+
         # Frame 0:
         self.frame0 = on_top_frame(self, "Press to Top")
         self.frame0.grid(row=0, column=2, padx=5, pady=5)
