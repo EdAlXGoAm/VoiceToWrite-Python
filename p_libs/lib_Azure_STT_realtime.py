@@ -30,7 +30,12 @@ class SpeechRecognizer:
         phrase_list_grammar.addPhrase("Test-Scripts'")
         phrase_list_grammar.addPhrase("Test-Cases")
         phrase_list_grammar.addPhrase("Test-Catalog")
+        phrase_list_grammar.addPhrase("Rapy")
+        phrase_list_grammar.addPhrase("FFT")
+        phrase_list_grammar.addPhrase("SP1")
         
+        phrase_list_grammar.addPhrase("Car Maker")
+        phrase_list_grammar.addPhrase("IPG")
     
     # Start continuous speech recognition
     def start_continuous_recognition(self):

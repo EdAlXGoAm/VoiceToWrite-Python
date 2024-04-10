@@ -40,7 +40,10 @@ class TranslatorThread(threading.Thread):
         self.textbox_trnslated.tag_configure("red", foreground="red")
         self.textbox_trnslated.tag_configure("black", foreground="black")
 
-    def run(self):
+        # Counter for partial translations
+        self.count2limit_partial_translations = 0
+
+    def run_ful(self):
         color = "black"
         while not self._stop_event.is_set():
             time.sleep(0.5)
@@ -50,8 +53,6 @@ class TranslatorThread(threading.Thread):
                     try:
                         translated_text = GoogleTranslator(source='auto', target=self.language_to).translate(
                             text)
-                        if self.partial:
-                            self.textbox_trnslated.delete(0.0, "end")
                         self.textbox_trnslated.insert(tk.END, translated_text + "\n", color)
                     except Exception:
                         print("unsupported by GoogleTranslate")
@@ -62,18 +63,53 @@ class TranslatorThread(threading.Thread):
                         elif self.language_to == "es":
                             self.language_to = "ES"
                         translated_text = self.translate_nucleus.translate_text(text, target_lang=self.language_to).text
-                        if self.partial:
-                            self.textbox_trnslated.delete(0.0, "end")
                         self.textbox_trnslated.insert(tk.END, translated_text + "\n", color)
                     except Exception:
                         print("unsupported by Deepl")
-                if not self.partial:
-                    self.textbox_trnslated.see(tk.END)
-                    # result = self.speech_nucleus.speak_text_async(translated_text).get()
-                    if color == "black":
-                        color = "red"
+                self.textbox_trnslated.see(tk.END)
+                # result = self.speech_nucleus.speak_text_async(translated_text).get()
+                if color == "black":
+                    color = "red"
+                else:
+                    color = "black"
+
+    
+    def run_int(self):
+        color = "black"
+        while not self._stop_event.is_set():
+            time.sleep(0.1)
+            if not self.text_queue.empty():
+                text = self.text_queue.get()
+                if (self.count2limit_partial_translations == 7):
+                    if True:
+                        try:
+                            translated_text = GoogleTranslator(source='auto', target=self.language_to).translate(
+                                text)
+                            self.textbox_trnslated.delete(0.0, "end")
+                            self.textbox_trnslated.insert(tk.END, translated_text + "\n", color)
+                        except Exception:
+                            print("unsupported by GoogleTranslate")
                     else:
-                        color = "black"
+                        try:
+                            if self.language_to == "en":
+                                self.language_to = "EN-US"
+                            elif self.language_to == "es":
+                                self.language_to = "ES"
+                            translated_text = self.translate_nucleus.translate_text(text, target_lang=self.language_to).text
+                            self.textbox_trnslated.delete(0.0, "end")
+                            self.textbox_trnslated.insert(tk.END, translated_text + "\n", color)
+                        except Exception:
+                            print("unsupported by Deepl")
+                    self.count2limit_partial_translations = 0
+                else:
+                    self.textbox_trnslated.insert(tk.END, ".", color)
+                self.count2limit_partial_translations += 1
+
+    def run(self):
+        if(self.partial):
+            self.run_int()
+        else:
+            self.run_ful()
 
     def stop(self):
         print("Thread stopped")
@@ -181,11 +217,13 @@ def change_text_btn_lbl_start_stop(language, lbl, btn):
 if __name__ == "__main__":
     # Speech To Text credentials
     # ------------------------------
-    STT_key="16ea2c90f3ed45638a3de04014217697"
+    STT_key="259e5fd1add44f78ad8275e956740a7a"
+    #0d80e8701e5941e38a2606400825c3d5
+    #56c8d85982a74a8684bc2458705efdfd
     STT_region="eastus"
     # Text To Speech credentials
     # ------------------------------
-    TTS_key="16ea2c90f3ed45638a3de04014217697"
+    TTS_key="259e5fd1add44f78ad8275e956740a7a"
     TTS_region="eastus"
     # DeepL credentials
     # ------------------------------
