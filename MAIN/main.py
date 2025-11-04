@@ -3,12 +3,17 @@ import deepl
 
 import azure.cognitiveservices.speech as speechsdk
 
+import sys
+import os
+# Agregar el directorio raíz al path para las importaciones
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 #--- Libraries for Azure voice to text real time ---#
 from p_libs import lib_Azure_STT_realtime as Az_vtt_rt
 #--- Libraries for recording audio ---#
 from p_libs import lib_Mic_rec_wav as Rec_Wav
 # pip install git+https://github.com/openai/whisper.git
-import whisper #conda install -c conda-forge ffmpeg
+# import whisper #conda install -c conda-forge ffmpeg
 #--- Libraries for move mouse ---#
 from p_libs import lib_move_mouse as Mm
 #--- Modules for Tkinter GUI ---#
@@ -241,8 +246,8 @@ if __name__ == "__main__":
     speech_synthesizer = speechsdk.SpeechSynthesizer(speech_config=speech_config)
 
     # Initializing whisper
-    if S_Whisper:
-        model = whisper.load_model("medium")
+    # if S_Whisper:
+    #     model = whisper.load_model("medium")
     
     # Create necessary queues
     queue_ful_es_ori = queue.Queue() # Queue to save the text output from the SpeechRecognizer ES
@@ -345,12 +350,12 @@ if __name__ == "__main__":
             print("Rec WAV stopped")
             return None, "D:/MyRepos/VoiceToWrite-Python/VoiceToWrite-Python/audio.wav"
         
-    def record_wav():
-        global recorder_thread, model
-        recorder_thread, file_name_wav = start_stop_recording_wav(recorder_thread, AzureSTTGUI.frame0.button_rec_wav)
-        if file_name_wav is not None:
-            result = model.transcribe(file_name_wav)
-            print(result["text"])
+    # def record_wav():
+    #     global recorder_thread, model
+    #     recorder_thread, file_name_wav = start_stop_recording_wav(recorder_thread, AzureSTTGUI.frame0.button_rec_wav)
+    #     if file_name_wav is not None:
+    #         result = model.transcribe(file_name_wav)
+    #         print(result["text"])
 
     def start_stop_move_mouse(thread, btn):
         if btn.cget('text') == 'Move mouse':
@@ -380,8 +385,8 @@ if __name__ == "__main__":
     AzureSTTGUI.frame4.button.config(command=button_functions_en_conv)
 
     # Asign command to button record wav
-    if S_Whisper:
-        AzureSTTGUI.frame0.button_rec_wav.config(command=record_wav)
+    # if S_Whisper:
+    #     AzureSTTGUI.frame0.button_rec_wav.config(command=record_wav)
 
     AzureSTTGUI.frame0.button_move_mouse.config(command=move_mouse)
 

@@ -1,0 +1,7 @@
+deep-translator
+deepl
+openai
+numpy
+pyaudiowpatch==0.2.12.7
+--extra-index-url https://download.pytorch.org/whl/cu116
+torch
